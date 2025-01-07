@@ -147,7 +147,7 @@ if __name__ == "__main__":
 
     series_list = []
 
-    percentile = 0.05
+    percentile = 0.0
 
     for ticker in tickers.fidelity_funds:
         try:
