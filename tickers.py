@@ -1,6 +1,4 @@
 fidelity_funds = [
-    # S&P 500
-    "^GSPC",
     "FZROX",
     "FXAIX",
     "FSKAX",

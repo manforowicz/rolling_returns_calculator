@@ -11,7 +11,7 @@ import tickers
 
 class StartDateDateMissing(Exception):
     """
-    Historical ticker data only starts after the given `start_date`.
+    Historical ticker data only starts after the requested `start_date`.
     """
 
     pass
@@ -28,14 +28,14 @@ def download_cached(
     if cache.is_file():
         data = pd.read_parquet(cache)
     else:
-        print(f"Cache for {cache_file} not found. Creating...")
+        print(f"Cache for {cache_file} not found. Downloading...")
         data = downloader(*args, **kwargs)
         Path("cache").mkdir(exist_ok=True)
         data.to_parquet(cache)
     return data
 
 
-def get_inflation_adjusted(
+def get_inflation_adjusted_monthly(
     ticker: str, start_date: datetime, end_date: datetime
 ) -> pd.Series:
     """
@@ -71,13 +71,11 @@ def get_inflation_adjusted(
     )
 
     # Align inflation data to the mutual fund data
-    cpi_data = cpi_data.reindex(fund_data.index, method="nearest", limit=2)
+    cpi_data = cpi_data.reindex(fund_data.index, method="nearest", limit=1)
 
     # Inflation-adjust the ticker data
     base_cpi = cpi_data["CPIAUCSL"].iloc[0]
-    inflation_adjusted: pd.Series = (
-        fund_data["Adj Close"] / cpi_data["CPIAUCSL"] * base_cpi
-    )
+    inflation_adjusted: pd.Series = fund_data["Close"] / cpi_data["CPIAUCSL"] * base_cpi
 
     # Double check to ensure there are no NaN
     if inflation_adjusted.isnull().values.any():
@@ -135,7 +133,7 @@ def print_summary(
         f"\nOver {months_period} month periods, the {percentile_rolling_returns.name} are:"
     )
     for i, (col, value) in enumerate(best.items()):
-        print(f"  {i+1}. {value:.2%} - {col}")
+        print(f"  {i+1:3}. {value:.2%} - {col}")
 
     print(f"...")
     total = len(percentile_rolling_returns.columns)
@@ -151,16 +149,26 @@ if __name__ == "__main__":
 
     for ticker in tickers.fidelity_funds:
         try:
-            fund_data = get_inflation_adjusted(
-                ticker, start_date=datetime(1999, 8, 1), end_date=datetime(2024, 8, 1)
+            fund_data = get_inflation_adjusted_monthly(
+                ticker, start_date=datetime(1999, 8, 1), end_date=datetime(2024, 10, 1)
             )
-        except StartDateDateMissing:
+        except StartDateDateMissing as e:
+            print(f"Skipping {ticker} because {e}")
             continue
 
-        min_returns = get_percentile_rolling_returns(fund_data, 12, 240, percentile)
+        min_returns = get_percentile_rolling_returns(fund_data, 12, 180, percentile)
 
-        long_name = yf.Ticker(ticker).info["longName"]
-        min_returns.name = f"{ticker} - {long_name}"
+        info = yf.Ticker(ticker).info
+        long_name = info["longName"]
+        try:
+            expense_ratio = info["annualReportExpenseRatio"]
+        except:
+            print(f"{ticker} didn't list expense ratio! Skipping.")
+            continue
+
+        min_returns.name = (
+            f"{ticker} (expense ratio: {expense_ratio:.2%}) - {long_name}"
+        )
         series_list.append(min_returns)
 
     df = pd.concat(series_list, axis=1)
@@ -168,9 +176,8 @@ if __name__ == "__main__":
         f"{percentile:.2%}th percentile annualized inflation-adjusted rolling returns"
     )
 
-    print_summary(df, 60, percentile)
+    print_summary(df, 120, percentile)
     print_summary(df, 180, percentile)
-    print_summary(df, 240, percentile)
 
     (df * 100).plot()
     plt.xlabel("Rolling return window (months)")
