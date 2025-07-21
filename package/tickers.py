@@ -79,13 +79,19 @@ fidelity_funds = [
     "FWWFX",  # Fidelity Worldwide Fund
     "FGILX",  # Fidelity Global Equity Income Fund
     "FSYJX",  # Fidelity Sustainable Emerging Markets Equity Fund
+    "^GSPC",
+    "FIPDX",
+    "FSRNX",
+    "FSAGX",
+    "FFIJX",
+    "GC=F",
 ]
 
 various_funds = [
     # Some stocks
-    # "TSLA",
-    # "NVDA",
-    # "CPB",
+    "TSLA",
+    "NVDA",
+    "CPB",
     # Fidelity
     # Indexes
     "^GSPC",
@@ -119,4 +125,5 @@ various_funds = [
     # Dodge & Cox
     "DODFX",  # Dodge & Cox International Stock Fund (since 2001)
     "DODGX",  # Dodge & Cox Stock Fund (since 1965)
+    "BTC-USD"
 ]

@@ -1,0 +1,8 @@
+yfinance
+matplotlib
+pandas
+mplcursors
+pandas_datareader
+pyarrow
+fastparquet
+scipy
