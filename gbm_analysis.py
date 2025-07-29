@@ -8,6 +8,9 @@ import matplotlib.pyplot as plt
 from package import tickers
 from package.fetcher import StartDateMissing, get_inflation_adjusted_monthly
 
+# TODO: Instead of assuming log-normal distribution of gains for each month, use the actual
+# distribution in the data, multiply it by itself the right number of times, and
+# take quantiles of that baby!
 
 def get_gbm_parameters(
     price_data: np.ndarray, points_per_year: int
